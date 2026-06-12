@@ -1,5 +1,6 @@
 from styles_parameters import styleF
 from sheetBackend import *
+from tkinter import END, filedialog
 
 
 def stChange(buttons:list):
@@ -9,15 +10,7 @@ def stChange(buttons:list):
         else:
             buttons[i].configure(style='Default.TButton')
 
-def fileF(buttons:list, func):
-    stChange(buttons)
-    func()
-
-def insertF(buttons:list, func):
-    stChange(buttons)
-    func()
-
-def homeF(buttons:list, func):
+def buttonF(buttons:list, func):
     stChange(buttons)
     func()
 
@@ -42,3 +35,50 @@ def enter_command(text_field, sheet):
         if typ=='cells':
             ceil_fill(row, column, res)
     sheet.refresh()
+
+def sheet_clicked(text_field, sheet):
+    curr = sheet.get_currently_selected()
+    if curr:
+        row = curr.row
+        column = curr.column
+        typ = curr.type_
+        if typ == 'cells':
+            text_field.delete("1.0", END)
+            text_field.insert("1.0", database.data[row][column])
+
+def open_file(): #True - error, False - no errors
+    file_path = filedialog.askopenfilename(
+        title="Выберите файл",
+        filetypes=[("Текстовые файлы", "*.txt"), ("Все файлы", "*.*")]
+    )
+
+    if not file_path:
+        content = "Выбор файла отменён."
+        return content, True
+
+    print(f"\nВыбран файл: {file_path}")
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+    except FileNotFoundError:
+        return "Ошибка: Файл не найден.", True
+    except PermissionError:
+        return "Ошибка: Нет прав для чтения этого файла.", True
+    except Exception as e:
+        return f"Непредвиденная ошибка: {e}", True
+    else:
+        return content, False
+
+def splitter(text, sp_symb):
+    res=[]
+    splitted = text.split('\n')
+    max_l = max(len(i) for i in splitted)
+    for i in splitted:
+        el = i.split(sp_symb)
+        res += [el+(max(100,2*max_l))*['']]
+    res+=len(splitted)*[['']*max(100,2*max_l)]
+    database.data = res
+    database.sheet.set_sheet_data(res)
+    database.sheet.refresh()
+
+

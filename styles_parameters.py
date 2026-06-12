@@ -33,3 +33,7 @@ def styleF():
             "Upper.TFrame",
             background='light gray'
         )
+        style.configure(
+            "side_interface.TFrame",
+            background='#EDEDED'
+        )

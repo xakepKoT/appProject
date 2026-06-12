@@ -1,10 +1,12 @@
 from re import *
 from traceback import format_exc
+from tkinter import IntVar
 
 
 class database():
     data=[['' for c in range(500)] for r in range(500)]
     linked = [[None for c in range(500)] for r in range(500)]
+    sheet = None
 
 
 pattern = r"#\$?[A-Z]+\$?[0-9]+"
@@ -39,3 +41,5 @@ def ceil_comm(s:str):
 
 def ceil_fill(row, column, data):
     database.data[row][column] = data
+
+

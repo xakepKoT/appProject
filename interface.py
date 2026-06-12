@@ -3,8 +3,9 @@ from tksheet import Sheet
 from tkinter import ttk
 from styles_parameters import styleF #used in 31
 from appFuncs import *
+from side_interface import Side
+from side_interface import *
 from sheetBackend import *
-
 
 
 class App:
@@ -13,6 +14,7 @@ class App:
     text_field=None
     sheet = None
     console = None
+    side=None
 
     def show_textfield(self):
         self.text_field = Text(self.upper, height=2, width=10)
@@ -27,11 +29,11 @@ class App:
         self.upper.grid_columnconfigure(1, weight=0)
 
 
-
     def create_upper(self):
         styleF()
         frm = ttk.Frame(self.root, style='Upper.TFrame')
         frm.grid(row=0, column=0, sticky="nsew")
+        frm.lower()
 
         file = ttk.Button(frm, text='File', style='Default.TButton', takefocus=False)
         file.grid(row=0, column=0, padx=0, pady=0, sticky='w')
@@ -39,9 +41,12 @@ class App:
         home.grid(row=0, column=0, padx=100, pady=0, sticky='w')
         insert = ttk.Button(frm, text='Insert', style='Default.TButton', takefocus=False)
         insert.grid(row=0, column=0, padx=200, pady=0, sticky='w')
-        file.configure(command=lambda: fileF([file, insert, home], self.cr_file))
-        home.configure(command=lambda: homeF([home, insert, file], self.cr_home))
-        insert.configure(command=lambda: insertF([insert, home, file], self.cr_insert))
+
+
+        file.configure(command=lambda: buttonF([file, insert, home], self.side.show_file))
+        home.configure(command=lambda: buttonF([home, insert, file], self.side.show_home))
+        insert.configure(command=lambda: buttonF([insert, home, file], self.side.show_ins))
+
         separator = ttk.Separator(frm, orient='horizontal')
         separator.grid(row=1, column=0, sticky='new', pady=(0, 50))
         return frm
@@ -62,50 +67,20 @@ class App:
         self.sheet = Sheet(frm, data=database.data) #CREATING SHEET
         self.sheet.enable_bindings()
         self.sheet.grid(row=3, column=0, sticky="nsew")
+        self.sheet.extra_bindings("cell_select", lambda x: sheet_clicked(self.text_field, self.sheet))
+        database.sheet = self.sheet
 
     def create(self):
         self.root = Tk()
+        self.side = Side(self.root)
         self.root.title("my app")
         self.root.geometry("800x600")
 
         self.upper = self.create_upper()
         self.show_textfield()
         self.create_body()
-        h, homeParams = self.cr_home()
-        i, insParams = self.cr_insert()
-        f, fileParams = self.cr_file()
 
         self.root.mainloop()
-
-    def cr_home(self):
-        frm = ttk.Frame(self.root)
-        frm.grid(row=1, column=0, sticky="new")
-        lab = ttk.Button(frm, text='home')
-        lab.grid(row=0, column=0, sticky="new")
-        params = frm.grid_info()
-
-        return [frm, params]
-
-    def cr_insert(self):
-        frm = ttk.Frame(self.root)
-        frm.grid(row=1, column=0, sticky="new")
-        lab = ttk.Button(frm, text='insert')
-        lab.grid(row=0, column=0, sticky="new")
-        params = frm.grid_info()
-        lab.grid_remove()
-        return [frm, params]
-
-    def cr_file(self):
-        frm = ttk.Frame(self.root)
-        frm.grid(row=1, column=0, sticky="new")
-        lab = ttk.Button(frm, text='file')
-        lab.grid(row=0, column=0, sticky="new")
-        params = frm.grid_info()
-        lab.grid_remove()
-        return [frm, params]
-
-
-
 
 
 app = App()
