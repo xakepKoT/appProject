@@ -22,7 +22,7 @@ class App:
 
         enter = ttk.Button(self.upper, text="↵", command=lambda: enter_command(self.text_field, self.sheet), width=10)
         enter.grid(row=2, column=0, padx=5, pady=5, sticky='e')
-        button = ttk.Button(self.upper, text="A", command=lambda: pr(button, self.text_field), width = 10)
+        button = ttk.Button(self.upper, text="↑", command=lambda: pr(button, self.text_field), width = 10)
         button.grid(row=2, column=0, padx=5, pady=5, sticky = 'w')
 
         self.upper.grid_columnconfigure(0, weight=1)
@@ -41,7 +41,6 @@ class App:
         home.grid(row=0, column=0, padx=100, pady=0, sticky='w')
         insert = ttk.Button(frm, text='Insert', style='Default.TButton', takefocus=False)
         insert.grid(row=0, column=0, padx=200, pady=0, sticky='w')
-
 
         file.configure(command=lambda: buttonF([file, insert, home], self.side.show_file))
         home.configure(command=lambda: buttonF([home, insert, file], self.side.show_home))
@@ -68,6 +67,8 @@ class App:
         self.sheet.enable_bindings()
         self.sheet.grid(row=3, column=0, sticky="nsew")
         self.sheet.extra_bindings("cell_select", lambda x: sheet_clicked(self.text_field, self.sheet))
+        self.sheet.extra_bindings("end_edit_cell", sheet_modified)
+        self.sheet.bulk_table_edit_validation(changed_paste)
         database.sheet = self.sheet
 
     def create(self):
@@ -82,6 +83,3 @@ class App:
 
         self.root.mainloop()
 
-
-app = App()
-app.create()

@@ -16,25 +16,26 @@ def buttonF(buttons:list, func):
 
 
 def pr(button, text_field):
-    if button.cget('text') == 'A':
+    if button.cget('text') == '↑':
         text_field.config(height=10)
-        button.config(text='a')
+        button.config(text='↓')
     else:
         text_field.config(height=2)
-        button.config(text='A')
+        button.config(text='↑')
 
 
 def enter_command(text_field, sheet):
     curr = sheet.get_currently_selected()
     if curr:
         text_field.update_idletasks()
-        res = ceil_comm(text_field.get("1.0", "end-1c"))
+        res, link, formula = ceil_comm(text_field.get("1.0", "end-1c"))
         row = curr.row
         column=curr.column
         typ=curr.type_
         if typ=='cells':
-            ceil_fill(row, column, res)
+            ceil_fill(row, column, res, link, formula)
     sheet.refresh()
+
 
 def sheet_clicked(text_field, sheet):
     curr = sheet.get_currently_selected()
@@ -44,19 +45,27 @@ def sheet_clicked(text_field, sheet):
         typ = curr.type_
         if typ == 'cells':
             text_field.delete("1.0", END)
-            text_field.insert("1.0", database.data[row][column])
+            text_field.insert("1.0", database.formulas[row][column])
+
+
+def sheet_modified(event):
+    row, column =event.row, event.column
+    new = event.value
+    data, linked, formula = ceil_comm(new)
+    ceil_fill(row, column, data, linked, formula)
+
+
+def sheet_edit(event, text_field):
+    text_field.insert(END, event.value)
+
 
 def open_file(): #True - error, False - no errors
     file_path = filedialog.askopenfilename(
         title="Выберите файл",
-        filetypes=[("Текстовые файлы", "*.txt"), ("Все файлы", "*.*")]
-    )
-
+        filetypes=[("Текстовые файлы", "*.txt"), ("Все файлы", "*.*")])
     if not file_path:
         content = "Выбор файла отменён."
         return content, True
-
-    print(f"\nВыбран файл: {file_path}")
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
@@ -69,6 +78,7 @@ def open_file(): #True - error, False - no errors
     else:
         return content, False
 
+
 def splitter(text, sp_symb):
     res=[]
     splitted = text.split('\n')
@@ -78,6 +88,8 @@ def splitter(text, sp_symb):
         res += [el+(max(100,2*max_l))*['']]
     res+=len(splitted)*[['']*max(100,2*max_l)]
     database.data = res
+    database.formulas = res
+    database.linked = [[[] for c in range(500)] for r in range(500)]
     database.sheet.set_sheet_data(res)
     database.sheet.refresh()
 

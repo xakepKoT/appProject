@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import ttk
 
 
-
 def styleF():
         style = ttk.Style()
         style.theme_use('clam')
