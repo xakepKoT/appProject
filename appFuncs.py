@@ -89,8 +89,6 @@ def splitter(text, sp_symb):
     res+=len(splitted)*[['']*max(100,2*max_l)]
     database.data = res
     database.formulas = res
-    database.linked = [[[] for c in range(500)] for r in range(500)]
+    database.linked = [[[] for c in range(len(res[0]))] for r in range(len(res))]
     database.sheet.set_sheet_data(res)
     database.sheet.refresh()
-
-

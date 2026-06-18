@@ -1,7 +1,4 @@
 from re import *
-import multiprocessing
-import queue
-import time
 
 
 class database():
@@ -18,6 +15,9 @@ patternB = r"[0-9]+"
 patternList1 = r"#\[[A-Z]+:[A-Z]+\]"
 patternList2 = r"#\[[0-9]+:[0-9]+\]"
 aind=ord('a')
+forbidden_names = ['__import__', 'eval', 'exec', 'compile', 'open', 'input', 'file',
+            'os', 'sys', 'subprocess', 'shutil', 'glob', 'socket', 'pickle',
+            'builtins', '__builtins__', '__import__', 'execfile', 'reload', 'inf', 'def']
 def ceil_comm(s:str):
     formula = s
     data = database.data
@@ -25,8 +25,9 @@ def ceil_comm(s:str):
     if s == ' '*s.count(' '):
         return s, linked, formula
     if s.strip()[0] == '=':
-        if 'import' in s:
-            return 'import is not supported', linked, formula
+        for i in forbidden_names:
+            if i in s:
+                return f'forbidden: {i}', linked, formula
         s=s.strip()[1:]
         match=search(pattern, s)
         match1 = search(patternList1, s)
@@ -46,15 +47,15 @@ def ceil_comm(s:str):
             result = match1.group()
             letters = search(patternA, result).group()[::-1]
             column = sum((ord(letters[i].lower()) - aind + 1) * 26 ** i for i in range(len(letters))) - 1
-            repl = ', '.join(list(data[i][column] for i in range(len(data))))
-            linked.append([i, column] for i in range(len(data)))
+            repl = '['+', '.join(list(data[i][column] for i in range(len(data)) if data[i][column] != ''))+']'
+            linked=list([i, column] for i in range(len(data)))
             s = s.replace(result, repl)
             match1 = search(pattern, s)
         while match2:
             result = match2.group()
             row = int(search(patternB, result).group())-1
-            repl = ', '.join(list(data[row]))
-            linked.append([row, i] for i in range(len(data[row])))
+            repl = '['+', '.join(list(i for i in data[row] if i!=''))+']'
+            linked=list([row, i] for i in range(len(data[row])))
             s = s.replace(result, repl)
             match2 = search(pattern, s)
         try:
@@ -81,7 +82,7 @@ def ceil_fill(row, column, data, linked, formula):
 
 def num_to_letters(n: int) -> str:
     if n < 0:
-        raise ValueError("Число должно быть неотрицательным")
+        raise ValueError("negative num was given")
     n += 1
     result = []
 
@@ -119,7 +120,6 @@ def changed_paste(event):
                 s=s.replace(result, repl)
                 s2=s2.replace(result, '')
                 match = search(pattern, s2)
-        else: return event
 
         data, linked, formula = ceil_comm(s)
         ceil_fill(row, col, data, linked, formula)
