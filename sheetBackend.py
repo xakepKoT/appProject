@@ -1,4 +1,8 @@
 from re import *
+from sys import setrecursionlimit
+
+recursionlimit = 500
+setrecursionlimit(recursionlimit)
 
 
 class database():
@@ -20,7 +24,6 @@ forbidden_names = ['__import__', 'eval', 'exec', 'compile', 'open', 'input', 'fi
             'builtins', '__builtins__', '__import__', 'execfile', 'reload', 'inf', 'def']
 def ceil_comm(s:str):
     formula = s
-    data = database.data
     linked = []
     if s == ' '*s.count(' '):
         return s, linked, formula
@@ -28,7 +31,7 @@ def ceil_comm(s:str):
         for i in forbidden_names:
             if i in s:
                 return f'forbidden: {i}', linked, formula
-        s=s.strip()[1:]
+        s=s[1:]
         match=search(pattern, s)
         match1 = search(patternList1, s)
         match2 = search(patternList2, s)
@@ -37,9 +40,13 @@ def ceil_comm(s:str):
             row = int(search(patternB, result).group())-1
             letters = search(patternA, result).group()[::-1]
             column = sum((ord(letters[i].lower())-aind+1)*26**i for i in range(len(letters)))-1
-            repl = data[row][column]
+            repl = database.data[row][column]
             linked.append([row, column])
-            if not repl.isdigit():
+
+            repl_tofloat = to_float(repl)
+            if isinstance(repl_tofloat, float):
+                repl=str(repl_tofloat)
+            else:
                 repl = f"'{repl}'"
             s = s.replace(result, repl)
             match=search(pattern, s)
@@ -47,15 +54,15 @@ def ceil_comm(s:str):
             result = match1.group()
             letters = search(patternA, result).group()[::-1]
             column = sum((ord(letters[i].lower()) - aind + 1) * 26 ** i for i in range(len(letters))) - 1
-            repl = '['+', '.join(list(data[i][column] for i in range(len(data)) if data[i][column] != ''))+']'
-            linked=list([i, column] for i in range(len(data)))
+            repl = '['+', '.join(list(database.data[i][column] for i in range(len(database.data)) if database.data[i][column] != ''))+']'
+            linked=list([i, column] for i in range(len(database.data)))
             s = s.replace(result, repl)
             match1 = search(pattern, s)
         while match2:
             result = match2.group()
             row = int(search(patternB, result).group())-1
-            repl = '['+', '.join(list(i for i in data[row] if i!=''))+']'
-            linked=list([row, i] for i in range(len(data[row])))
+            repl = '['+', '.join(list(i for i in database.data[row] if i!=''))+']'
+            linked=list([row, i] for i in range(len(database.data[row])))
             s = s.replace(result, repl)
             match2 = search(pattern, s)
         try:
@@ -67,12 +74,23 @@ def ceil_comm(s:str):
     return s, linked, formula
 
 
-def ceil_fill(row, column, data, linked, formula):
+def ceil_fill(row, column, data, linked, formula, iteration=0):
+    if [row, column] in linked:
+        database.data[row][column] = "Error: an infinite loop has been created"
+        database.formulas[row][column] = formula
+        return
+
+    if iteration >= recursionlimit:
+        database.data[row][column] = 'Error: recursion limit exceeded. look for linked cells'
     database.data[row][column] = data
     database.formulas[row][column] = formula
     for i in database.linked[row][column]:
         r,c = i
-        database.data[r][c] = ceil_comm(database.formulas[r][c])[0]
+        try:
+            dat, link, form = ceil_comm(database.formulas[r][c])
+            ceil_fill(r,c,dat,link,form, iteration+1)
+        except Exception as e:
+            database.data[r][c]=str(e)
     for i in linked:
         database.linked[i[0]][i[1]].append([row, column])
     for i in database.back_linked[row][column]:
@@ -81,8 +99,7 @@ def ceil_fill(row, column, data, linked, formula):
 
 
 def num_to_letters(n: int) -> str:
-    if n < 0:
-        raise ValueError("negative num was given")
+
     n += 1
     result = []
 
@@ -124,5 +141,14 @@ def changed_paste(event):
         data, linked, formula = ceil_comm(s)
         ceil_fill(row, col, data, linked, formula)
         event.data[(row, col)] = data
-
     return event
+
+
+def to_float(s):
+    s = s.replace(',', '.')
+    try:
+        float(s)
+    except:
+        return False
+    else:
+        return float(s)
